@@ -114,5 +114,5 @@ var tusConfig = new DefaultTusConfiguration
 ```
 
 # Special Thanks
-[Bechtle A/V Software Solutions 360°](https://av360.io/) for sponsoring the project
-[Xtensible.TusDotNet.Azure](https://github.com/giometrix/Xtensible.TusDotNet.Azure) for a boilerplate to create this extension
+- [Bechtle A/V Software Solutions 360°](https://av360.io/) for sponsoring the project
+- [Xtensible.TusDotNet.Azure](https://github.com/giometrix/Xtensible.TusDotNet.Azure) for a boilerplate to create this extension
