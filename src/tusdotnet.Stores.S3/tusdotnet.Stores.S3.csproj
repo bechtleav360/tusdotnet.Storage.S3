@@ -1,0 +1,22 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <PackageVersion>1.0.0</PackageVersion>
+        <Nullable>enable</Nullable>
+        <TargetFrameworks>net6.0;net8.0</TargetFrameworks>        
+        <Description>tusdotnet.Stores.S3 allows the usage of S3 as the Storage medium for TUS uploads</Description>
+        <Authors>Frank Gehann</Authors>
+        <Company>Bechtle A/V Software Solutions 360°</Company>
+        <Copyright>Bechtle A/V Software Solutions 360°</Copyright>
+        <PackageReleaseNotes>Release notes at https://github.com/bechtleav360/tusdotnet.Storage.S3/releases</PackageReleaseNotes>
+        <PackageProjectUrl>https://github.com/bechtleav360/tusdotnet.Storage.S3</PackageProjectUrl>
+        <PackageLicenseExpression>EUPL-1.2</PackageLicenseExpression>
+        <PackageTags>tusdotnet,tus,s3</PackageTags>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="tusdotnet" Version="2.8.0"/>
+        <PackageReference Include="AWSSDK.S3" Version="3.7.307.15"/>
+    </ItemGroup>
+
+</Project>
