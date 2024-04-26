@@ -8,6 +8,7 @@
         <Authors>Frank Gehann</Authors>
         <Company>Bechtle A/V Software Solutions 360°</Company>
         <Copyright>Bechtle A/V Software Solutions 360°</Copyright>
+        <PackageReadmeFile>readme.md</PackageReadmeFile>
         <PackageReleaseNotes>Release notes at https://github.com/bechtleav360/tusdotnet.Storage.S3/releases</PackageReleaseNotes>
         <PackageProjectUrl>https://github.com/bechtleav360/tusdotnet.Storage.S3</PackageProjectUrl>
         <PackageLicenseExpression>EUPL-1.2</PackageLicenseExpression>
@@ -17,6 +18,11 @@
     <ItemGroup>
         <PackageReference Include="tusdotnet" Version="2.8.0"/>
         <PackageReference Include="AWSSDK.S3" Version="3.7.307.15"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <None Include="../../readme.md" Pack="true" PackagePath="/"/>
+        <None Include="../../LICENSE" Pack="true" PackagePath="/"/>
     </ItemGroup>
 
 </Project>
