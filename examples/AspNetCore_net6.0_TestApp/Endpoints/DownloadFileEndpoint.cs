@@ -29,15 +29,19 @@ public static class DownloadFileEndpoint
         var metadata = await file.GetMetadataAsync(context.RequestAborted);
 
         context.Response.ContentType = GetContentTypeOrDefault(metadata);
-        context.Response.ContentLength = fileStream.Length;
 
-        if (metadata.TryGetValue("name", out var nameMeta))
+        if (fileStream.CanSeek)
+        {
+            context.Response.ContentLength = fileStream.Length;    
+        }
+
+        if (metadata.TryGetValue("name", out Metadata? nameMeta))
         {
             context.Response.Headers.Add("Content-Disposition",
                 new[] { $"attachment; filename=\"{nameMeta.GetString(Encoding.UTF8)}\"" });
         }
 
-        using (fileStream)
+        await using (fileStream)
         {
             await fileStream.CopyToAsync(context.Response.Body, 81920, context.RequestAborted);
         }
