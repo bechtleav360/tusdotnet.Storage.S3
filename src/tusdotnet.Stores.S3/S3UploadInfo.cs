@@ -16,6 +16,11 @@ public class S3UploadInfo
     public string UploadId { get; set; } = null!;
 
     /// <summary>
+    /// Metadata attached to the file upload
+    /// </summary>
+    public string Metadata { get; set; } = string.Empty;
+
+    /// <summary>
     /// Total file size in bytes set via the <see cref="TusS3Store.CreateFileAsync"/> call
     /// </summary>
     public long UploadLength { get; set; } = -1;
@@ -26,20 +31,9 @@ public class S3UploadInfo
     public long UploadOffset { get; set; } = 0;
     
     /// <summary>
-    /// Value of the Upload-Concat header set when <see cref="TusS3Store.CreatePartialFileAsync"/>
-    /// or <see cref="TusS3Store.CreatePartialFileAsync"/> was used to create the file
-    /// </summary>
-    public string? UploadConcatHeader { get; set; }
-    
-    /// <summary>
     /// size of the current upload chunk (needed to verify the completeness of an upload used to verify via checksum)
     /// </summary>
     public long UploadPartSize { get; set; } = -1;
-    
-    /// <summary>
-    /// 
-    /// </summary>
-    public long UploadPartOffset { get; set; } = -1;
 
     /// <summary>
     /// Partials of the S3 multipart upload
