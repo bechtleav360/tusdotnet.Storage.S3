@@ -15,13 +15,13 @@ public partial class TusS3Store
     {
         _logger.LogTrace("Appending data using the PipeReader for file '{FileId}'", fileId);
 
-        S3UploadInfo s3UploadInfo = await GetUploadInfo(fileId, cancellationToken);
+        S3UploadInfo s3UploadInfo = await _tusS3Api.GetUploadInfo(fileId, cancellationToken);
 
         if (s3UploadInfo.UploadLength == s3UploadInfo.UploadOffset)
         {
             _logger.LogTrace("Upload length for file '{FileId}' reached, returning", fileId);
 
-            await FinalizeUpload(s3UploadInfo, cancellationToken);
+            await _tusS3Api.FinalizeUpload(s3UploadInfo, cancellationToken);
             
             return 0;
         }
@@ -39,14 +39,14 @@ public partial class TusS3Store
 
                 AssertNotToMuchData(s3UploadInfo.UploadOffset, result.Buffer.Length, s3UploadInfo.UploadLength);
 
-                bytesWrittenThisRequest += await UploadPartData(
+                bytesWrittenThisRequest += await _tusS3Api.UploadPartData(
                     s3UploadInfo,
                     result.Buffer.AsStream(),
                     cancellationToken);
                 
                 if (s3UploadInfo.UploadLength == s3UploadInfo.UploadOffset)
                 {
-                    await FinalizeUpload(s3UploadInfo, cancellationToken);
+                    await _tusS3Api.FinalizeUpload(s3UploadInfo, cancellationToken);
                 }
 
                 _logger.LogDebug("Append '{PartialLength}' bytes to the file '{FileId}'", result.Buffer.Length, fileId);

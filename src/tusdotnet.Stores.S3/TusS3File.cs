@@ -16,7 +16,7 @@ namespace tusdotnet.Stores.S3;
 public class TusS3File : ITusFile
 {
     private readonly string _bucket;
-    private readonly IAmazonS3 _s3Client;
+    private readonly TusS3Api _tusS3Api;
 
     /// <inheritdoc />
     public string Id { get; }
@@ -26,44 +26,28 @@ public class TusS3File : ITusFile
     /// </summary>
     internal TusS3File(
         string fileId,
-        IAmazonS3 s3Client,
+        TusS3Api tusS3Api,
         string bucket)
     {
-            Id = fileId;
-            _s3Client = s3Client;
-            _bucket = bucket;
-        }
+        Id = fileId;
+        _tusS3Api = tusS3Api;
+        _bucket = bucket;
+    }
 
     /// <inheritdoc />
     public async Task<Stream> GetContentAsync(CancellationToken cancellationToken)
     {
-            GetObjectRequest request = new GetObjectRequest()
-            {
-                BucketName = _bucket,
-                Key = TusS3Helper.GetFileKey(Id)
-            };
-
-            GetObjectResponse result = await _s3Client.GetObjectAsync(request, cancellationToken);
-
-            return result.ResponseStream;
-        }
+        return await _tusS3Api.GetFileContent(Id, cancellationToken);
+    }
 
     /// <inheritdoc />
     public async Task<Dictionary<string, Metadata>> GetMetadataAsync(CancellationToken cancellationToken)
     {
-            GetObjectMetadataRequest request = new GetObjectMetadataRequest()
-            {
-                BucketName = _bucket,
-                Key = TusS3Helper.GetFileKey(Id)
-            };
+        S3UploadInfo uploadInfo = await _tusS3Api.GetUploadInfo(Id, cancellationToken);
 
-            GetObjectMetadataResponse result = await _s3Client.GetObjectMetadataAsync(request, cancellationToken);
+        MetadataParserResult? parsedMetadata =
+            MetadataParser.ParseAndValidate(MetadataParsingStrategy.AllowEmptyValues, uploadInfo.Metadata);
 
-            string metadata = result.Metadata.FromS3MetadataCollection();
-
-            MetadataParserResult? parsedMetadata =
-                MetadataParser.ParseAndValidate(MetadataParsingStrategy.AllowEmptyValues, metadata);
-
-            return parsedMetadata.Metadata;
-        }
+        return parsedMetadata.Metadata;
+    }
 }

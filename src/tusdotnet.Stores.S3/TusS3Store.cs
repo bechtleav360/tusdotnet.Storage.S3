@@ -4,9 +4,7 @@ using Amazon.S3.Model;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using tusdotnet.Interfaces;
@@ -39,12 +37,7 @@ public partial class TusS3Store :
     ITusCreationDeferLengthStore
 {
     private readonly ILogger<TusS3Store> _logger;
-
-    /// <summary>
-    /// S3 client instance used to communicate with AWS S3 or compatible servers
-    /// </summary>
-    private readonly IAmazonS3 _s3Client;
-
+    private readonly TusS3Api _tusS3Api;
     private readonly TusS3StoreConfiguration _configuration;
     private readonly ITusFileIdProvider _fileIdProvider;
     private static readonly GuidFileIdProvider _defaultFileIdProvider = new();
@@ -64,12 +57,33 @@ public partial class TusS3Store :
         TusS3StoreConfiguration configuration,
         AWSCredentials s3Credentials,
         AmazonS3Config s3Config,
+        ITusFileIdProvider? fileIdProvider = null) : this(
+        logger,
+        configuration,
+        new AmazonS3Client(s3Credentials, s3Config),
+        fileIdProvider)
+    {
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="TusS3Store"/> class.
+    /// </summary>
+    /// <param name="logger">Logger to log the execution of the tus protocol</param>
+    /// <param name="configuration">The configuration for the TusS3Store</param>
+    /// <param name="s3Client">S3 client instance to use to interact with the s3 bucket</param>
+    /// <param name="fileIdProvider">
+    ///     The provider that generates ids for files. If unsure use <see cref="GuidFileIdProvider"/>.
+    /// </param>
+    public TusS3Store(
+        ILogger<TusS3Store> logger,
+        TusS3StoreConfiguration configuration,
+        AmazonS3Client s3Client,
         ITusFileIdProvider? fileIdProvider = null)
     {
         _logger = logger;
         _configuration = configuration;
         _fileIdProvider = fileIdProvider ?? _defaultFileIdProvider;
-        _s3Client = new AmazonS3Client(s3Credentials, s3Config);
+        _tusS3Api = new TusS3Api(_logger, s3Client, _configuration.BucketName);
     }
 
     /// <summary>
@@ -141,239 +155,12 @@ public partial class TusS3Store :
         return optimalPartSize;
     }
 
-    private async Task<string> InitiateUpload(string fileId, string metadata, CancellationToken cancellationToken)
-    {
-        InitiateMultipartUploadRequest request = new InitiateMultipartUploadRequest
-        {
-            BucketName = _configuration.BucketName,
-            Key = TusS3Helper.GetFileKey(fileId)
-        };
-
-        request.Metadata.ToS3MetadataCollection(metadata);
-
-        InitiateMultipartUploadResponse? response =
-            await _s3Client.InitiateMultipartUploadAsync(request, cancellationToken);
-
-        _logger.LogDebug(
-            "Initiated a new s3 multipart upload for file id '{FileId}' with the upload id '{UploadId}'",
-            fileId,
-            response.UploadId);
-
-        return response.UploadId;
-    }
-
-    private async Task FinalizeUpload(S3UploadInfo uploadInfo, CancellationToken cancellationToken)
-    {
-        CompleteMultipartUploadRequest request = new CompleteMultipartUploadRequest
-        {
-            BucketName = _configuration.BucketName,
-            Key = TusS3Helper.GetFileKey(uploadInfo.FileId),
-            UploadId = uploadInfo.UploadId
-        };
-
-        request.AddPartETags(uploadInfo.Parts.OrderBy(p => p.Number).Select(p => new PartETag(p.Number, p.Etag)));
-
-        try
-        {
-            CompleteMultipartUploadResponse? response =
-                await _s3Client.CompleteMultipartUploadAsync(request, cancellationToken);
-        }
-        catch (TaskCanceledException)
-        {
-            _logger.LogWarning(
-                "Complete the s3 multipart upload for file '{FileId}' with the upload id '{UploadId}' cancelled",
-                uploadInfo.FileId,
-                uploadInfo.UploadId);
-        }
-
-        _logger.LogDebug(
-            "Complete the s3 multipart upload for file '{FileId}' with the upload id '{UploadId}'",
-            uploadInfo.FileId,
-            uploadInfo.UploadId);
-    }
-
-    private async Task AbortMultipartUploadAsync(string key, string uploadId, CancellationToken cancellationToken)
-    {
-        try
-        {
-            AbortMultipartUploadResponse? response = await _s3Client.AbortMultipartUploadAsync(
-                _configuration.BucketName,
-                key,
-                uploadId,
-                cancellationToken);
-
-            if (response != null)
-            {
-                _logger.LogDebug(
-                    "S3 Multipart request for key '{Key}' and upload id '{UploadId}' aborted",
-                    key,
-                    uploadId);
-            }
-            else
-            {
-                _logger.LogWarning(
-                    "S3 Multipart request for key '{Key}' and upload id '{UploadId}' not aborted",
-                    key,
-                    uploadId);
-            }
-        }
-        catch (TaskCanceledException)
-        {
-            _logger.LogWarning("S3 Multipart request abortion for upload id '{UploadId}' cancelled", uploadId);
-        }
-    }
-
-    private async Task<long> UploadPartData(
-        S3UploadInfo uploadInfo,
-        Stream uploadData,
-        CancellationToken cancellationToken)
-    {
-        int lastPartNumber = uploadInfo.Parts.MaxBy(p => p.Number)?.Number ?? 0;
-
-        S3Partial s3Partial = new S3Partial()
-        {
-            Number = lastPartNumber + 1,
-            SizeInBytes = uploadData.Length
-        };
-
-        UploadPartRequest request = new UploadPartRequest()
-        {
-            BucketName = _configuration.BucketName,
-            Key = TusS3Helper.GetFileKey(uploadInfo.FileId),
-            UploadId = uploadInfo.UploadId,
-            PartNumber = s3Partial.Number,
-            InputStream = uploadData
-        };
-
-        try
-        {
-            UploadPartResponse? response = await _s3Client.UploadPartAsync(request, cancellationToken);
-
-            s3Partial.Etag = response.ETag;
-
-            uploadInfo.Parts.Add(s3Partial);
-            uploadInfo.UploadOffset += uploadData.Length;
-        }
-        catch (TaskCanceledException)
-        {
-            _logger.LogWarning("Upload data cancelled info execution for file '{FileId}' cancelled", uploadInfo.FileId);
-        }
-
-        await WriteUploadInfo(uploadInfo, cancellationToken);
-
-        return s3Partial.SizeInBytes;
-    }
-
-    private async Task WriteUploadInfo(
-        S3UploadInfo uploadInfo,
-        CancellationToken cancellationToken)
-    {
-        string uploadInfoJson = JsonSerializer.Serialize(uploadInfo);
-
-        PutObjectRequest request = new PutObjectRequest
-        {
-            BucketName = _configuration.BucketName,
-            Key = TusS3Helper.GetUploadInfoKey(uploadInfo.FileId),
-            ContentBody = uploadInfoJson,
-            ContentType = "application/json"
-        };
-
-        try
-        {
-            await _s3Client.PutObjectAsync(request, cancellationToken);
-        }
-        catch (TaskCanceledException)
-        {
-            _logger.LogWarning("Writing upload info execution for file '{FileId}' cancelled", uploadInfo.FileId);
-        }
-
-        _logger.LogDebug("Wrote upload info for file id '{FileId}'", uploadInfo.FileId);
-    }
-
-    private async Task<S3UploadInfo> GetUploadInfo(
-        string fileId,
-        CancellationToken cancellationToken)
-    {
-        _logger.LogTrace("Request to retrieve the upload info for file id '{FileId}'", fileId);
-
-        GetObjectRequest request = new GetObjectRequest()
-        {
-            BucketName = _configuration.BucketName,
-            Key = TusS3Helper.GetUploadInfoKey(fileId)
-        };
-
-        S3UploadInfo? uploadInfo = null;
-
-        try
-        {
-            GetObjectResponse? response = await _s3Client.GetObjectAsync(request, cancellationToken);
-
-            uploadInfo = await JsonSerializer.DeserializeAsync<S3UploadInfo>(
-                response.ResponseStream,
-                cancellationToken: cancellationToken);
-
-            if (uploadInfo == null)
-            {
-                _logger.LogWarning("No upload info found file '{FileId}'", fileId);
-            }
-            else
-            {
-                _logger.LogDebug("Upload info acquired from storage for file '{FileId}'", fileId);
-            }
-        }
-        catch (TaskCanceledException)
-        {
-            _logger.LogWarning("Acquiring of the upload info file '{FileId}' cancelled", fileId);
-        }
-
-        return uploadInfo ?? throw new TusStoreException($"No s3 upload info found for file id '{fileId}'");
-    }
-
-    private async Task<IEnumerable<S3UploadInfo>> GetAllUploadInfos(CancellationToken cancellationToken)
-    {
-        _logger.LogTrace("Request to retrieve all upload infos");
-
-        IListObjectsV2Paginator? paginator = _s3Client.Paginators.ListObjectsV2(
-            new ListObjectsV2Request
-            {
-                BucketName = _configuration.BucketName,
-                Prefix = TusS3Defines.UploadInfoObjectPrefix,
-                Delimiter = "/"
-            });
-
-        List<S3UploadInfo> uploadInfos = new List<S3UploadInfo>();
-
-        await foreach (ListObjectsV2Response? response in paginator.Responses.WithCancellation(cancellationToken))
-        {
-            foreach (S3Object s3Object in response.S3Objects)
-            {
-                string fileId = s3Object.Key.Split("/").Last().Trim();
-
-                try
-                {
-                    uploadInfos.Add(await GetUploadInfo(fileId, cancellationToken));
-                }
-                catch (Exception)
-                {
-                    // ignored
-                }
-            }
-        }
-
-        _logger.LogDebug("Retrieved {UploadInfosCount} upload infos from the storage backend", uploadInfos.Count);
-
-        return uploadInfos;
-    }
-
     /// <inheritdoc />
     public async Task<bool> FileExistAsync(string fileId, CancellationToken cancellationToken)
     {
         _logger.LogTrace("Checking existence of file '{FileId}'", fileId);
 
-        bool fileExists = await _s3Client.ObjectExistsAsync(
-            _configuration.BucketName,
-            TusS3Helper.GetUploadInfoKey(fileId),
-            cancellationToken);
+        bool fileExists = await _tusS3Api.TusFileExists(fileId, cancellationToken);
 
         if (fileExists)
         {
@@ -390,7 +177,7 @@ public partial class TusS3Store :
     /// <inheritdoc />
     public async Task<long?> GetUploadLengthAsync(string fileId, CancellationToken cancellationToken)
     {
-        S3UploadInfo uploadInfo = await GetUploadInfo(fileId, cancellationToken);
+        S3UploadInfo uploadInfo = await _tusS3Api.GetUploadInfo(fileId, cancellationToken);
 
         _logger.LogDebug(
             "Returning requested UploadLength with value '{UploadLength}' for file id '{FileId}'",
@@ -403,7 +190,7 @@ public partial class TusS3Store :
     /// <inheritdoc />
     public async Task<long> GetUploadOffsetAsync(string fileId, CancellationToken cancellationToken)
     {
-        S3UploadInfo uploadInfo = await GetUploadInfo(fileId, cancellationToken);
+        S3UploadInfo uploadInfo = await _tusS3Api.GetUploadInfo(fileId, cancellationToken);
 
         _logger.LogDebug(
             "Returning requested UploadOffset with value '{UploadOffset}' for file id '{FileId}'",
@@ -420,16 +207,17 @@ public partial class TusS3Store :
         CancellationToken cancellationToken)
     {
         string fileId = await _fileIdProvider.CreateId(metadata);
-        string uploadId = await InitiateUpload(fileId, metadata, cancellationToken);
+        string uploadId = await _tusS3Api.InitiateUpload(fileId, cancellationToken);
 
         S3UploadInfo uploadInfo = new S3UploadInfo
         {
             FileId = fileId,
             UploadId = uploadId,
-            UploadLength = uploadLength
+            UploadLength = uploadLength,
+            Metadata = metadata
         };
 
-        await WriteUploadInfo(uploadInfo, cancellationToken);
+        await _tusS3Api.WriteUploadInfo(uploadInfo, cancellationToken);
 
         _logger.LogDebug(
             "Created a new file reference with file id '{FileId}' and length '{UploadLength}'",
@@ -442,17 +230,11 @@ public partial class TusS3Store :
     /// <inheritdoc />
     public async Task<string> GetUploadMetadataAsync(string fileId, CancellationToken cancellationToken)
     {
-        GetObjectMetadataRequest request = new GetObjectMetadataRequest()
-        {
-            BucketName = _configuration.BucketName,
-            Key = TusS3Helper.GetFileKey(fileId)
-        };
-
-        GetObjectMetadataResponse result = await _s3Client.GetObjectMetadataAsync(request, cancellationToken);
+        S3UploadInfo uploadInfo = await _tusS3Api.GetUploadInfo(fileId, cancellationToken);
 
         _logger.LogDebug("UploadMetadata for file id '{FileId}' requested, returning data", fileId);
 
-        return result.Metadata.FromS3MetadataCollection();
+        return uploadInfo.Metadata;
     }
 
     /// <inheritdoc />
@@ -470,7 +252,7 @@ public partial class TusS3Store :
         }
 
         return fileExists
-            ? new TusS3File(fileId, _s3Client, _configuration.BucketName)
+            ? new TusS3File(fileId, _tusS3Api, _configuration.BucketName)
             : null;
     }
 
@@ -481,21 +263,12 @@ public partial class TusS3Store :
 
         if (fileExists)
         {
-            S3UploadInfo uploadInfo = await GetUploadInfo(fileId, cancellationToken);
+            S3UploadInfo uploadInfo = await _tusS3Api.GetUploadInfo(fileId, cancellationToken);
 
             Task.WaitAll(
-                AbortMultipartUploadAsync(
-                    TusS3Helper.GetFileKey(fileId),
-                    uploadInfo.UploadId,
-                    cancellationToken),
-                _s3Client.DeleteObjectAsync(
-                    _configuration.BucketName,
-                    TusS3Helper.GetFileKey(fileId),
-                    cancellationToken),
-                _s3Client.DeleteObjectAsync(
-                    _configuration.BucketName,
-                    TusS3Helper.GetUploadInfoKey(fileId),
-                    cancellationToken));
+                _tusS3Api.AbortMultipartUploadAsync(fileId, uploadInfo.UploadId, cancellationToken),
+                _tusS3Api.DeleteFile(fileId, cancellationToken),
+                _tusS3Api.DeleteUploadInfo(fileId, cancellationToken));
 
             _logger.LogDebug(
                 "File with file id '{FileId}' deleted",
@@ -512,9 +285,9 @@ public partial class TusS3Store :
     /// <inheritdoc />
     public async Task SetExpirationAsync(string fileId, DateTimeOffset expires, CancellationToken cancellationToken)
     {
-        S3UploadInfo uploadInfo = await GetUploadInfo(fileId, cancellationToken);
+        S3UploadInfo uploadInfo = await _tusS3Api.GetUploadInfo(fileId, cancellationToken);
         uploadInfo.Expires = expires;
-        await WriteUploadInfo(uploadInfo, cancellationToken);
+        await _tusS3Api.WriteUploadInfo(uploadInfo, cancellationToken);
 
         _logger.LogDebug(
             "Expiration for file id '{FileId}' set to value '{FileExpires}'",
@@ -525,7 +298,7 @@ public partial class TusS3Store :
     /// <inheritdoc />
     public async Task<DateTimeOffset?> GetExpirationAsync(string fileId, CancellationToken cancellationToken)
     {
-        S3UploadInfo uploadInfo = await GetUploadInfo(fileId, cancellationToken);
+        S3UploadInfo uploadInfo = await _tusS3Api.GetUploadInfo(fileId, cancellationToken);
 
         _logger.LogDebug(
             "Expiration for file id '{FileId}' has value '{FileExpires}'",
@@ -538,7 +311,7 @@ public partial class TusS3Store :
     /// <inheritdoc />
     public async Task<IEnumerable<string>> GetExpiredFilesAsync(CancellationToken cancellationToken)
     {
-        IEnumerable<S3UploadInfo> uploadInfos = await GetAllUploadInfos(cancellationToken);
+        IEnumerable<S3UploadInfo> uploadInfos = await _tusS3Api.GetAllUploadInfos(cancellationToken);
 
         IEnumerable<S3UploadInfo> expiredIncompleteFiles =
             uploadInfos.Where(info => info.Expires.HasPassed() && info.UploadOffset < info.UploadLength);
@@ -549,28 +322,23 @@ public partial class TusS3Store :
     /// <inheritdoc />
     public async Task<int> RemoveExpiredFilesAsync(CancellationToken cancellationToken)
     {
-        IEnumerable<S3UploadInfo> uploadInfos = await GetAllUploadInfos(cancellationToken);
+        IEnumerable<S3UploadInfo> uploadInfos = await _tusS3Api.GetAllUploadInfos(cancellationToken);
 
-        IListMultipartUploadsPaginator? paginator = _s3Client.Paginators.ListMultipartUploads(
-            new ListMultipartUploadsRequest()
-            {
-                BucketName = _configuration.BucketName,
-                Prefix = TusS3Defines.FileObjectPrefix,
-                Delimiter = "/"
-            });
+        IListMultipartUploadsPaginator? paginator = _tusS3Api.ListMultipartUploads();
 
         if (paginator != null)
         {
             IEnumerable<string> knownUploadIds = uploadInfos.Select(info => info.UploadId);
 
-            await foreach (var response in paginator.Responses.WithCancellation(cancellationToken))
+            await foreach (ListMultipartUploadsResponse? response in paginator.Responses.WithCancellation(
+                               cancellationToken))
             {
                 IEnumerable<MultipartUpload> unattachedMultipartUploads =
                     response.MultipartUploads.Where(upload => !knownUploadIds.Contains(upload.UploadId));
-                
+
                 foreach (MultipartUpload unattachedMultipartUpload in unattachedMultipartUploads)
                 {
-                    await AbortMultipartUploadAsync(
+                    await _tusS3Api.AbortMultipartUploadAsync(
                         unattachedMultipartUpload.Key,
                         unattachedMultipartUpload.UploadId,
                         cancellationToken);
@@ -594,9 +362,9 @@ public partial class TusS3Store :
     /// <inheritdoc />
     public async Task SetUploadLengthAsync(string fileId, long uploadLength, CancellationToken cancellationToken)
     {
-        S3UploadInfo uploadInfo = await GetUploadInfo(fileId, cancellationToken);
+        S3UploadInfo uploadInfo = await _tusS3Api.GetUploadInfo(fileId, cancellationToken);
         uploadInfo.UploadLength = uploadLength;
-        await WriteUploadInfo(uploadInfo, cancellationToken);
+        await _tusS3Api.WriteUploadInfo(uploadInfo, cancellationToken);
 
         _logger.LogDebug(
             "Upload length '{UploadLength}' received & stored for file id '{FileId}'",
