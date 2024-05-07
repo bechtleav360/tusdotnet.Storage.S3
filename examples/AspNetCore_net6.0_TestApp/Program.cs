@@ -76,7 +76,7 @@ static void AddAuthorization(WebApplicationBuilder builder)
 static TusS3Store CreateTusS3Store(IServiceProvider services)
 {
     ILogger<Program> logger = services.GetRequiredService<ILogger<Program>>();
-    IOptionsSnapshot<S3Options> options = services.GetRequiredService<IOptionsSnapshot<S3Options>>();
+    IOptions<S3Options> options = services.GetRequiredService<IOptions<S3Options>>();
 
     var tusS3StoreConfig = new TusS3StoreConfiguration()
     {
