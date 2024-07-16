@@ -77,7 +77,7 @@ public partial class TusS3Store :
     public TusS3Store(
         ILogger<TusS3Store> logger,
         TusS3StoreConfiguration configuration,
-        AmazonS3Client s3Client,
+        IAmazonS3 s3Client,
         ITusFileIdProvider? fileIdProvider = null)
     {
         _logger = logger;
