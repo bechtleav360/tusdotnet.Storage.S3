@@ -168,7 +168,7 @@ public partial class TusS3Store :
         }
         else
         {
-            _logger.LogWarning("File for '{FileId}' not found", fileId);
+            _logger.LogDebug("File for '{FileId}' not found", fileId);
         }
 
         return fileExists;
