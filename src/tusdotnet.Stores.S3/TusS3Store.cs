@@ -83,7 +83,11 @@ public partial class TusS3Store :
         _logger = logger;
         _configuration = configuration;
         _fileIdProvider = fileIdProvider ?? _defaultFileIdProvider;
-        _tusS3Api = new TusS3Api(_logger, s3Client, _configuration.BucketName);
+        _tusS3Api = new TusS3Api(_logger, s3Client, new TusS3BucketConfiguration(
+            BucketName: _configuration.BucketName,
+            UploadInfoObjectPrefix: _configuration.UploadInfoObjectPrefix.TrimEnd('/') + '/',
+            FileObjectPrefix: _configuration.FileObjectPrefix.TrimEnd('/') + '/'
+        ));
     }
 
     /// <summary>

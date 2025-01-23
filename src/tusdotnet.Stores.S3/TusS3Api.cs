@@ -18,46 +18,32 @@ internal class TusS3Api
 {
     private readonly ILogger _logger;
     private readonly IAmazonS3 _s3Client;
-    private readonly string _bucketName;
+    private readonly TusS3BucketConfiguration _bucketConfiguration;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="TusS3Api"/> class.
     /// </summary>
     /// <param name="logger">Logger to log the execution of the tus protocol</param>
     /// <param name="s3Client">S3 client instance used to interact with the s3 bucket</param>
-    /// <param name="bucketName">Name of the bucket the client will access</param>
-    public TusS3Api(
-        ILogger logger,
+    /// <param name="bucketConfiguration">Bucket and file object prefix configuration</param>
+    public TusS3Api(ILogger logger,
         IAmazonS3 s3Client,
-        string bucketName)
+        TusS3BucketConfiguration bucketConfiguration
+    )
     {
         _logger = logger;
-        _bucketName = bucketName;
         _s3Client = s3Client;
+        _bucketConfiguration = bucketConfiguration;
     }
 
     private string GetFileKey(string key)
     {
-        string prefix = TusS3Defines.FileObjectPrefix;
-
-        if (!string.IsNullOrWhiteSpace(prefix) && !prefix.EndsWith("/"))
-        {
-            prefix += "/";
-        }
-
-        return prefix + key;
+        return _bucketConfiguration.FileObjectPrefix + key;
     }
 
     private string GetUploadInfoKey(string key)
     {
-        string prefix = TusS3Defines.UploadInfoObjectPrefix;
-
-        if (!string.IsNullOrWhiteSpace(prefix) && !prefix.EndsWith("/"))
-        {
-            prefix += "/";
-        }
-
-        return prefix + key;
+        return _bucketConfiguration.UploadInfoObjectPrefix + key;
     }
 
     internal async Task<bool> TusFileExists(
@@ -66,7 +52,7 @@ internal class TusS3Api
     {
         try
         {
-            await _s3Client.GetObjectMetadataAsync(_bucketName, GetUploadInfoKey(fileId), cancellationToken);
+            await _s3Client.GetObjectMetadataAsync(_bucketConfiguration.BucketName, GetUploadInfoKey(fileId), cancellationToken);
 
             return true;
         }
@@ -83,7 +69,7 @@ internal class TusS3Api
         CancellationToken cancellationToken)
     {
         string key = GetUploadInfoKey(fileId);
-        await _s3Client.DeleteObjectAsync(_bucketName, key, cancellationToken);
+        await _s3Client.DeleteObjectAsync(_bucketConfiguration.BucketName, key, cancellationToken);
     }
 
     internal async Task DeleteUploadInfo(
@@ -91,14 +77,14 @@ internal class TusS3Api
         CancellationToken cancellationToken)
     {
         string key = GetUploadInfoKey(fileId);
-        await _s3Client.DeleteObjectAsync(_bucketName, key, cancellationToken);
+        await _s3Client.DeleteObjectAsync(_bucketConfiguration.BucketName, key, cancellationToken);
     }
 
     internal async Task<string> InitiateUpload(string fileId, CancellationToken cancellationToken)
     {
         InitiateMultipartUploadRequest request = new InitiateMultipartUploadRequest
         {
-            BucketName = _bucketName,
+            BucketName = _bucketConfiguration.BucketName,
             Key = GetFileKey(fileId)
         };
 
@@ -117,7 +103,7 @@ internal class TusS3Api
     {
         CompleteMultipartUploadRequest request = new CompleteMultipartUploadRequest
         {
-            BucketName = _bucketName,
+            BucketName = _bucketConfiguration.BucketName,
             Key = GetFileKey(uploadInfo.FileId),
             UploadId = uploadInfo.UploadId
         };
@@ -150,7 +136,7 @@ internal class TusS3Api
             string key = GetFileKey(fileId);
 
             AbortMultipartUploadResponse? response = await _s3Client.AbortMultipartUploadAsync(
-                _bucketName,
+                _bucketConfiguration.BucketName,
                 key,
                 uploadId,
                 cancellationToken);
@@ -191,7 +177,7 @@ internal class TusS3Api
 
         UploadPartRequest request = new UploadPartRequest()
         {
-            BucketName = _bucketName,
+            BucketName = _bucketConfiguration.BucketName,
             Key = GetFileKey(uploadInfo.FileId),
             UploadId = uploadInfo.UploadId,
             PartNumber = s3Partial.Number,
@@ -225,7 +211,7 @@ internal class TusS3Api
 
         PutObjectRequest request = new PutObjectRequest
         {
-            BucketName = _bucketName,
+            BucketName = _bucketConfiguration.BucketName,
             Key = GetUploadInfoKey(uploadInfo.FileId),
             ContentBody = uploadInfoJson,
             ContentType = "application/json"
@@ -251,7 +237,7 @@ internal class TusS3Api
 
         GetObjectRequest request = new GetObjectRequest()
         {
-            BucketName = _bucketName,
+            BucketName = _bucketConfiguration.BucketName,
             Key = GetUploadInfoKey(fileId)
         };
 
@@ -289,7 +275,7 @@ internal class TusS3Api
         IListObjectsV2Paginator? paginator = _s3Client.Paginators.ListObjectsV2(
             new ListObjectsV2Request
             {
-                BucketName = _bucketName,
+                BucketName = _bucketConfiguration.BucketName,
                 Prefix = TusS3Defines.UploadInfoObjectPrefix,
                 Delimiter = "/"
             });
@@ -326,7 +312,7 @@ internal class TusS3Api
 
         GetObjectRequest request = new GetObjectRequest()
         {
-            BucketName = _bucketName,
+            BucketName = _bucketConfiguration.BucketName,
             Key = GetFileKey(fileId)
         };
 
@@ -340,9 +326,11 @@ internal class TusS3Api
         return _s3Client.Paginators.ListMultipartUploads(
             new ListMultipartUploadsRequest()
             {
-                BucketName = _bucketName,
+                BucketName = _bucketConfiguration.BucketName,
                 Prefix = TusS3Defines.FileObjectPrefix,
                 Delimiter = "/"
             });
     }
 }
+
+internal record TusS3BucketConfiguration(string BucketName, string UploadInfoObjectPrefix, string FileObjectPrefix);
