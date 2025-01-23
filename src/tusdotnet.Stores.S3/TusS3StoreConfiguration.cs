@@ -8,6 +8,16 @@ public class TusS3StoreConfiguration
     public string BucketName { get; set; } = null!;
 
     /// <summary>
+    /// The key prefix for file objects, the default value is <see cref="TusS3Defines.FileObjectPrefix" />
+    /// </summary>
+    public string FileObjectPrefix { get; set; } = TusS3Defines.FileObjectPrefix;
+
+    /// <summary>
+    /// The key prefix for upload info objects, the default value is <see cref="TusS3Defines.UploadInfoObjectPrefix" />
+    /// </summary>
+    public string UploadInfoObjectPrefix { get; set; } = TusS3Defines.UploadInfoObjectPrefix;
+
+    /// <summary>
     /// MaxPartSize specifies the maximum size of a single part uploaded to S3
     /// in bytes. This value must be bigger than MinPartSize! In order to
     /// choose the correct number, two things have to be kept in mind:
