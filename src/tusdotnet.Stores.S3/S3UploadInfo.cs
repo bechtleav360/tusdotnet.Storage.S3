@@ -3,6 +3,9 @@ using System.Collections.Generic;
 
 namespace tusdotnet.Stores.S3;
 
+/// <summary>
+/// S3UploadInfo represents the information needed to handle a tus upload in S3.
+/// </summary>
 public class S3UploadInfo
 {
     /// <summary>
@@ -40,5 +43,8 @@ public class S3UploadInfo
     /// </summary>
     public List<S3Partial> Parts { get; set; } = new();
     
+    /// <summary>
+    /// The time when the file expires. Default is 1 day from now (utc).
+    /// </summary>
     public DateTimeOffset Expires { get; set; } = DateTimeOffset.UtcNow.AddDays(1);
 }

@@ -1,5 +1,8 @@
 ﻿namespace tusdotnet.Stores.S3;
 
+/// <summary>
+/// Configuration for the Tus S3 store.
+/// </summary>
 public class TusS3StoreConfiguration
 {
     /// <summary>

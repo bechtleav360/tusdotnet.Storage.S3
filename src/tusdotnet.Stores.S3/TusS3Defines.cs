@@ -1,10 +1,28 @@
 ﻿namespace tusdotnet.Stores.S3;
 
+/// <summary>
+/// Defines constants used by the S3 store.
+/// </summary>
 public class TusS3Defines
 {
+    /// <summary>
+    /// the definition of a single byte
+    /// </summary>
     public const int Byte = 1;
+    
+    /// <summary>
+    /// the number of bytes in a kilobyte
+    /// </summary>
     public const int KiloByte = Byte * 1024;
+    
+    /// <summary>
+    /// the number of bytes in a megabyte
+    /// </summary>
     public const int MegaByte = KiloByte * 1024;
+    
+    /// <summary>
+    /// the number of bytes in a gigabyte
+    /// </summary>
     public const long GigaByte = MegaByte * 1024;
     
     /// <summary>
