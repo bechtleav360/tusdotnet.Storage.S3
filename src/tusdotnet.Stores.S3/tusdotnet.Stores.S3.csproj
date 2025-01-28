@@ -1,9 +1,9 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <PackageVersion>1.0.2</PackageVersion>
+        <PackageVersion>1.1.0</PackageVersion>
         <Nullable>enable</Nullable>
-        <TargetFrameworks>net6.0;net8.0</TargetFrameworks>        
+        <TargetFrameworks>net6.0;net8.0;net9.0</TargetFrameworks>        
         <Description>tusdotnet.Stores.S3 allows the usage of S3 as the Storage medium for TUS uploads</Description>
         <Authors>Frank Gehann</Authors>
         <Company>Bechtle A/V Software Solutions 360°</Company>
@@ -19,7 +19,7 @@
 
     <ItemGroup>
         <PackageReference Include="tusdotnet" Version="2.8.0"/>
-        <PackageReference Include="AWSSDK.S3" Version="3.7.307.15"/>
+        <PackageReference Include="AWSSDK.S3" Version="3.7.412.5" />
     </ItemGroup>
 
     <ItemGroup>
