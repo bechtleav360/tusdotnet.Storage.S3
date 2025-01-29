@@ -68,7 +68,7 @@ internal class TusS3Api
         string fileId,
         CancellationToken cancellationToken)
     {
-        string key = GetUploadInfoKey(fileId);
+        string key = GetFileKey(fileId);
         await _s3Client.DeleteObjectAsync(_bucketConfiguration.BucketName, key, cancellationToken);
     }
 
