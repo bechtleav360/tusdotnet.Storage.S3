@@ -95,6 +95,9 @@ AmazonS3Config s3Config = new AmazonS3Config
     // MUST be true to work correctly with MinIO server
     ServiceURL = "https://mys3endpoint.com",
     ForcePathStyle = true,
+    // see changes in AWSSDK.S3 https://github.com/aws/aws-sdk-net/issues/3610
+    // set RequestChecksumCalculation to "WHEN_REQUIRED" if using alternative S3 implementation like minio/ceph etc
+    RequestChecksumCalculation = RequestChecksumCalculation.WHEN_REQUIRED
 };
 
 var tusStore = new TusS3Store(logger, tusS3StoreConfig, awsCredentials, s3Config);
@@ -112,6 +115,16 @@ var tusConfig = new DefaultTusConfiguration
 };
 
 ```
+
+# Known issues
+
+## Amazon. S3 .AmazonSException: The Content-SHA256 you specified did not match what we received
+
+If you are using an S3 compatible backend you might encounter this error message. 
+This is caused by a change in the AWSSDK.S3 default behaviour see https://github.com/aws/aws-sdk-net/issues/3610                   
+
+It can be mitigated by setting the `RequestChecksumCalculation` to `RequestChecksumCalculation.WHEN_REQUIRED` in the `AmazonS3Config`.
+                                                       
 
 # Special Thanks
 - [Bechtle A/V Software Solutions 360°](https://av360.io/) for sponsoring the project
