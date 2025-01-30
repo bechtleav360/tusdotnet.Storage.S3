@@ -92,6 +92,7 @@ static TusS3Store CreateTusS3Store(IServiceProvider services)
         // MUST be true to work correctly with MinIO server
         ServiceURL = options.Value.Endpoint,
         ForcePathStyle = options.Value.ForcePathStyle,
+        RequestChecksumCalculation = RequestChecksumCalculation.WHEN_REQUIRED
     };
 
     return new TusS3Store(services.GetRequiredService<ILogger<TusS3Store>>(), tusS3StoreConfig, awsCredentials, config);
