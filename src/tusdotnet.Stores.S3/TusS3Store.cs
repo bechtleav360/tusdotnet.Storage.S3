@@ -1,16 +1,17 @@
-﻿using Amazon.Runtime;
-using Amazon.S3;
-using Amazon.S3.Model;
-using Microsoft.Extensions.Logging;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Amazon.Runtime;
+using Amazon.S3;
+using Amazon.S3.Model;
+using Microsoft.Extensions.Logging;
 using tusdotnet.Interfaces;
 using tusdotnet.Models;
 using tusdotnet.Stores.FileIdProviders;
 using tusdotnet.Stores.S3.Extensions;
+using tusdotnet.Stores.S3.Interfaces;
 
 namespace tusdotnet.Stores.S3;
 
@@ -28,13 +29,7 @@ namespace tusdotnet.Stores.S3;
 /// s3:PutObject
 /// s3:DeleteObject
 /// </remarks>
-public partial class TusS3Store :
-    ITusPipelineStore,
-    ITusCreationStore,
-    ITusReadableStore,
-    ITusTerminationStore,
-    ITusExpirationStore,
-    ITusCreationDeferLengthStore
+public partial class TusS3Store : ITusS3Store
 {
     private readonly ILogger<TusS3Store> _logger;
     private readonly TusS3Api _tusS3Api;
