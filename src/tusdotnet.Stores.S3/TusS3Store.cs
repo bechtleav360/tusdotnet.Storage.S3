@@ -264,9 +264,13 @@ public partial class TusS3Store : ITusS3Store
         {
             S3UploadInfo uploadInfo = await _tusS3Api.GetUploadInfo(fileId, cancellationToken);
 
-            Task.WaitAll(
-                _tusS3Api.AbortMultipartUploadAsync(fileId, uploadInfo.UploadId, cancellationToken),
-                _tusS3Api.DeleteFile(fileId, cancellationToken),
+            // Only abort if file is multipart
+            if (uploadInfo.Parts.Count >= 1 && uploadInfo.Parts[0].Etag.Contains("-"))
+            {
+                await _tusS3Api.AbortMultipartUploadAsync(fileId, uploadInfo.UploadId, cancellationToken);
+            }
+
+            Task.WaitAll(_tusS3Api.DeleteFile(fileId, cancellationToken),
                 _tusS3Api.DeleteUploadInfo(fileId, cancellationToken));
 
             _logger.LogDebug(
