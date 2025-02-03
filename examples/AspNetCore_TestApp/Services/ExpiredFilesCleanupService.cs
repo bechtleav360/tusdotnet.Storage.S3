@@ -2,7 +2,7 @@
 using tusdotnet.Models;
 using tusdotnet.Models.Expiration;
 
-namespace AspNetCore_net6._0_TestApp.Services;
+namespace AspNetCore_TestApp.Services;
 
 public sealed class ExpiredFilesCleanupService : IHostedService, IDisposable
 {

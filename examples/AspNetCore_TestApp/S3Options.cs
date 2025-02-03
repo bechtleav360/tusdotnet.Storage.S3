@@ -1,4 +1,4 @@
-﻿namespace AspNetCore_net6._0_TestApp;
+﻿namespace AspNetCore_TestApp;
 
 public class S3Options
 {

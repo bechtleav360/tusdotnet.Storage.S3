@@ -21,7 +21,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "tusdotnet.Stores.S3.Tests",
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "examples", "examples", "{11664112-5DBA-4EFF-B20F-9C924A328CFC}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AspNetCore_net6.0_TestApp", "examples\AspNetCore_net6.0_TestApp\AspNetCore_net6.0_TestApp.csproj", "{B6014BE1-0D65-4003-A29B-D35C83AFFEAA}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AspNetCore_TestApp", "examples\AspNetCore_TestApp\AspNetCore_TestApp.csproj", "{B6014BE1-0D65-4003-A29B-D35C83AFFEAA}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

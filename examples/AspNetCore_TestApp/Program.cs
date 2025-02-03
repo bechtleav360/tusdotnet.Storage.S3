@@ -1,9 +1,9 @@
 using Amazon.Runtime;
 using Amazon.S3;
-using AspNetCore_net6._0_TestApp;
-using AspNetCore_net6._0_TestApp.Authentication;
-using AspNetCore_net6._0_TestApp.Endpoints;
-using AspNetCore_net6._0_TestApp.Services;
+using AspNetCore_TestApp;
+using AspNetCore_TestApp.Authentication;
+using AspNetCore_TestApp.Endpoints;
+using AspNetCore_TestApp.Services;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Logging.Console;
 using Microsoft.Extensions.Options;

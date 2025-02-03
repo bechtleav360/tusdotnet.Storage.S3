@@ -2,7 +2,7 @@
 using tusdotnet.Interfaces;
 using tusdotnet.Models;
 
-namespace AspNetCore_net6._0_TestApp.Endpoints;
+namespace AspNetCore_TestApp.Endpoints;
 
 public static class DownloadFileEndpoint
 {
