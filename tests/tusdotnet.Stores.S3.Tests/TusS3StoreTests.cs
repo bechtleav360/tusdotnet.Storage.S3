@@ -1,6 +1,5 @@
 using Amazon.S3;
 using Amazon.S3.Model;
-using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
 using tusdotnet.Interfaces;
@@ -38,6 +37,6 @@ public class TusS3StoreTests
                 request.BucketName == "SomeBucket" && request.Key == "fileFolder/13some metadata")
             , Arg.Any<CancellationToken>());
         await s3Client.Received(1).PutObjectAsync(Arg.Is<PutObjectRequest>(request => request.BucketName == "SomeBucket" && request.Key == "infoFolder/13some metadata"), Arg.Any<CancellationToken>());
-        response.Should().Be("13some metadata");
+        Assert.Equal("13some metadata",response);
     }
 }
