@@ -11,7 +11,7 @@
         <Copyright>Bechtle A/V Software Solutions 360°</Copyright>
         <RepositoryUrl>https://github.com/bechtleav360/tusdotnet.Storage.S3</RepositoryUrl>
         <RepositoryType>git</RepositoryType>
-        <PackageReadmeFile>readme.md</PackageReadmeFile>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
         <PackageReleaseNotes>Release notes at https://github.com/bechtleav360/tusdotnet.Storage.S3/releases</PackageReleaseNotes>
         <PackageProjectUrl>https://github.com/bechtleav360/tusdotnet.Storage.S3</PackageProjectUrl>        
         <PackageLicenseExpression>EUPL-1.2</PackageLicenseExpression>
