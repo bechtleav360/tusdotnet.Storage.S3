@@ -141,9 +141,9 @@ static Task<DefaultTusConfiguration> TusConfigurationFactory(HttpContext httpCon
 
                 if (ctx.HttpContext.User.Identity?.IsAuthenticated != true)
                 {
-                    ctx.HttpContext.Response.Headers.Add(
+                    ctx.HttpContext.Response.Headers.Append(
                         "WWW-Authenticate",
-                        new StringValues("Basic realm=tusdotnet-test-net6.0"));
+                        new StringValues("Basic realm=tusdotnet-test-net9.0"));
 
                     ctx.FailRequest(HttpStatusCode.Unauthorized);
 

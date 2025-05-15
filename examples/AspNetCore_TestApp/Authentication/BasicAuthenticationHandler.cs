@@ -20,9 +20,8 @@ public class BasicAuthenticationHandler : AuthenticationHandler<AuthenticationSc
         IOptionsMonitor<AuthenticationSchemeOptions> options,
         ILoggerFactory logger,
         UrlEncoder encoder,
-        ISystemClock clock,
         IHttpContextAccessor httpContextAccessor)
-        : base(options, logger, encoder, clock)
+        : base(options, logger, encoder)
     {
         _httpContextAccessor = httpContextAccessor;
     }
@@ -37,7 +36,7 @@ public class BasicAuthenticationHandler : AuthenticationHandler<AuthenticationSc
         if (!Request.Headers.ContainsKey("Authorization"))
         {
             // Force browser to display login prompt.
-            _httpContextAccessor.HttpContext!.Response.Headers.Add("WWW-Authenticate", new StringValues("Basic realm=tusdotnet-test-net6"));
+            _httpContextAccessor.HttpContext!.Response.Headers.Append("WWW-Authenticate", new StringValues("Basic realm=tusdotnet-test-net6"));
             return Task.FromResult(AuthenticateResult.Fail("No header provided"));
         }
 

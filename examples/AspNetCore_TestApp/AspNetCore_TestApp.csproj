@@ -10,4 +10,8 @@
     <ProjectReference Include="..\..\src\tusdotnet.Stores.S3\tusdotnet.Stores.S3.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="AWSSDK.S3" Version="3.7.416.27" />
+  </ItemGroup>
+
 </Project>
