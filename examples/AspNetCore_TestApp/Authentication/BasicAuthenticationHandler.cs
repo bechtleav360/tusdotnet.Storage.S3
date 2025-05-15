@@ -43,7 +43,7 @@ public class BasicAuthenticationHandler : AuthenticationHandler<AuthenticationSc
         bool isAuthenticated;
         try
         {
-            var authHeader = AuthenticationHeaderValue.Parse(Request.Headers["Authorization"]);
+            var authHeader = AuthenticationHeaderValue.Parse(Request.Headers["Authorization"].ToString() ?? throw new InvalidOperationException());
             var credentials = Encoding.UTF8.GetString(Convert.FromBase64String(authHeader.Parameter!)).Split(':');
             isAuthenticated = Authenticate(credentials[0], credentials[1]);
         }

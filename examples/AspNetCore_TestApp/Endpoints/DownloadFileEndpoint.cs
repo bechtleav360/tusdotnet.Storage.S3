@@ -22,6 +22,7 @@ public static class DownloadFileEndpoint
         {
             context.Response.StatusCode = 404;
             await context.Response.WriteAsync($"File with id {fileId} was not found.", context.RequestAborted);
+
             return;
         }
 
@@ -32,12 +33,13 @@ public static class DownloadFileEndpoint
 
         if (fileStream.CanSeek)
         {
-            context.Response.ContentLength = fileStream.Length;    
+            context.Response.ContentLength = fileStream.Length;
         }
 
         if (metadata.TryGetValue("name", out Metadata? nameMeta))
         {
-            context.Response.Headers.Add("Content-Disposition",
+            context.Response.Headers.Append(
+                "Content-Disposition",
                 new[] { $"attachment; filename=\"{nameMeta.GetString(Encoding.UTF8)}\"" });
         }
 

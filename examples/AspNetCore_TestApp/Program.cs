@@ -53,7 +53,8 @@ static void AddAuthorization(WebApplicationBuilder builder)
     builder.Services.AddHttpContextAccessor();
 
     builder.Services.Configure<OnAuthorizeOption>(
-        opt => opt.EnableOnAuthorize = (bool)builder.Configuration.GetValue(typeof(bool), "EnableOnAuthorize"));
+        opt => opt.EnableOnAuthorize = (bool)(builder.Configuration.GetValue(typeof(bool), "EnableOnAuthorize") ?? throw new
+            InvalidOperationException()));
 
     builder.Services.AddAuthorization(
         configure =>

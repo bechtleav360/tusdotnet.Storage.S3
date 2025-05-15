@@ -105,7 +105,8 @@ internal class TusS3Api
         {
             BucketName = _bucketConfiguration.BucketName,
             Key = GetFileKey(uploadInfo.FileId),
-            UploadId = uploadInfo.UploadId
+            UploadId = uploadInfo.UploadId,
+            PartETags = new List<PartETag>() // create the list to mitigate NullRefException which seems to be a bug in the overload
         };
 
         request.AddPartETags(uploadInfo.Parts.OrderBy(p => p.Number).Select(p => new PartETag(p.Number, p.Etag)));
