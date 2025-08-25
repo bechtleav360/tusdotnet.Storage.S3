@@ -75,14 +75,22 @@ public partial class TusS3Store : ITusS3Store
         IAmazonS3 s3Client,
         ITusFileIdProvider? fileIdProvider = null)
     {
+        ValidateConfiguration(configuration);
+        
         _logger = logger;
         _configuration = configuration;
         _fileIdProvider = fileIdProvider ?? _defaultFileIdProvider;
         _tusS3Api = new TusS3Api(_logger, s3Client, new TusS3BucketConfiguration(
             BucketName: _configuration.BucketName,
-            UploadInfoObjectPrefix: _configuration.UploadInfoObjectPrefix.TrimEnd('/') + '/',
-            FileObjectPrefix: _configuration.FileObjectPrefix.TrimEnd('/') + '/'
+            UploadInfoObjectPrefix: _configuration.UploadInfoObjectPrefix.Length > 0 ? _configuration.UploadInfoObjectPrefix.TrimEnd('/') + '/' : string.Empty,
+            FileObjectPrefix: _configuration.FileObjectPrefix.Length > 0 ? _configuration.FileObjectPrefix.TrimEnd('/') + '/' : string.Empty
         ));
+    }
+
+    private static void ValidateConfiguration(TusS3StoreConfiguration configuration)
+    {
+        if (configuration.UploadInfoObjectPrefix == configuration.FileObjectPrefix)
+            throw new ArgumentException("'UploadInfoObjectPrefix' should not be equal to 'FileObjectPrefix'");
     }
 
     /// <summary>
