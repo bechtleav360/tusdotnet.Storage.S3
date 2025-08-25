@@ -277,7 +277,7 @@ internal class TusS3Api
             new ListObjectsV2Request
             {
                 BucketName = _bucketConfiguration.BucketName,
-                Prefix = TusS3Defines.UploadInfoObjectPrefix,
+                Prefix = _bucketConfiguration.UploadInfoObjectPrefix,
                 Delimiter = "/"
             });
 
@@ -328,7 +328,7 @@ internal class TusS3Api
             new ListMultipartUploadsRequest()
             {
                 BucketName = _bucketConfiguration.BucketName,
-                Prefix = TusS3Defines.FileObjectPrefix,
+                Prefix = _bucketConfiguration.FileObjectPrefix,
                 Delimiter = "/"
             });
     }
