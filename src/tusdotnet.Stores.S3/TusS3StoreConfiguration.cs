@@ -70,4 +70,14 @@ public class TusS3StoreConfiguration
     /// Limits on how many concurrent part uploads to S3 are allowed.
     /// </summary>
     public int ConcurrentUploadLimit { get; set; } = 10;
+
+    /// <summary>
+    /// Disables the default checksum validation.
+    /// </summary>
+    public bool DisableDefaultChecksumValidation { get; set; } = false;
+
+    /// <summary>
+    /// Disables payload signing.
+    /// </summary>
+    public bool DisablePayloadSigning { get; set; } = false;
 }
