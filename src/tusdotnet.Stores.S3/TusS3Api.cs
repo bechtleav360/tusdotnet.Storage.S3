@@ -178,6 +178,8 @@ internal class TusS3Api
 
         UploadPartRequest request = new UploadPartRequest()
         {
+            DisableDefaultChecksumValidation = _bucketConfiguration.DisableDefaultChecksumValidation,
+            DisablePayloadSigning = _bucketConfiguration.DisablePayloadSigning,
             BucketName = _bucketConfiguration.BucketName,
             Key = GetFileKey(uploadInfo.FileId),
             UploadId = uploadInfo.UploadId,
@@ -212,6 +214,8 @@ internal class TusS3Api
 
         PutObjectRequest request = new PutObjectRequest
         {
+            DisableDefaultChecksumValidation = _bucketConfiguration.DisableDefaultChecksumValidation,
+            DisablePayloadSigning = _bucketConfiguration.DisablePayloadSigning,
             BucketName = _bucketConfiguration.BucketName,
             Key = GetUploadInfoKey(uploadInfo.FileId),
             ContentBody = uploadInfoJson,
@@ -334,4 +338,4 @@ internal class TusS3Api
     }
 }
 
-internal record TusS3BucketConfiguration(string BucketName, string UploadInfoObjectPrefix, string FileObjectPrefix);
+internal record TusS3BucketConfiguration(string BucketName, string UploadInfoObjectPrefix, string FileObjectPrefix, bool DisableDefaultChecksumValidation, bool DisablePayloadSigning);

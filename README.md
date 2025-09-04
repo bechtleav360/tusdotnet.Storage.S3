@@ -118,12 +118,20 @@ var tusConfig = new DefaultTusConfiguration
 
 # Known issues
 
-## Amazon. S3 .AmazonSException: The Content-SHA256 you specified did not match what we received
+## Amazon.S3.AmazonSException: The Content-SHA256 you specified did not match what we received
 
 If you are using an S3 compatible backend you might encounter this error message. 
 This is caused by a change in the AWSSDK.S3 default behaviour see https://github.com/aws/aws-sdk-net/issues/3610                   
 
 It can be mitigated by setting the `RequestChecksumCalculation` to `RequestChecksumCalculation.WHEN_REQUIRED` in the `AmazonS3Config`.
+
+## Amazon.S3.AmazonS3Exception: STREAMING-AWS4-HMAC-SHA256-PAYLOAD not implemented
+
+If you are using Cloudflare R2 as your compatible S3 backend, you might encounter this message.
+This is caused by Cloudflare R2 [currently not supporting](https://developers.cloudflare.com/r2/examples/aws/aws-sdk-net/#upload-and-retrieve-objects)
+the Streaming SigV4 implementation used by AWSSDK.S3.
+
+It can be mitigated by setting `DisableDefaultChecksumValidation` and `DisablePayloadSigning` to `true` in `TusS3StoreConfiguration`.
                                                        
 
 # Special Thanks

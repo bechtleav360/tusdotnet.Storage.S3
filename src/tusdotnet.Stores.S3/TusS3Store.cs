@@ -83,7 +83,9 @@ public partial class TusS3Store : ITusS3Store
         _tusS3Api = new TusS3Api(_logger, s3Client, new TusS3BucketConfiguration(
             BucketName: _configuration.BucketName,
             UploadInfoObjectPrefix: _configuration.UploadInfoObjectPrefix.Length > 0 ? _configuration.UploadInfoObjectPrefix.TrimEnd('/') + '/' : string.Empty,
-            FileObjectPrefix: _configuration.FileObjectPrefix.Length > 0 ? _configuration.FileObjectPrefix.TrimEnd('/') + '/' : string.Empty
+            FileObjectPrefix: _configuration.FileObjectPrefix.Length > 0 ? _configuration.FileObjectPrefix.TrimEnd('/') + '/' : string.Empty,
+            configuration.DisableDefaultChecksumValidation,
+            configuration.DisablePayloadSigning
         ));
     }
 
