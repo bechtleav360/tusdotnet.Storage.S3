@@ -337,7 +337,7 @@ public partial class TusS3Store : ITusS3Store
                                cancellationToken))
             {
                 IEnumerable<MultipartUpload> unattachedMultipartUploads =
-                    response.MultipartUploads.Where(upload => !knownUploadIds.Contains(upload.UploadId));
+                    (response.MultipartUploads ?? new List<MultipartUpload>()).Where(upload => !knownUploadIds.Contains(upload.UploadId));
 
                 foreach (MultipartUpload unattachedMultipartUpload in unattachedMultipartUploads)
                 {
