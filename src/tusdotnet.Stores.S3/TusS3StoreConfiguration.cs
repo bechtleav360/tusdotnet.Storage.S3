@@ -80,4 +80,9 @@ public class TusS3StoreConfiguration
     /// Disables payload signing.
     /// </summary>
     public bool DisablePayloadSigning { get; set; } = false;
+    
+    /// <summary>
+    /// Disables unattached multipart uploads aborting during expired files removal.
+    /// </summary>
+    public bool DisableUnattachedMultipartUploadsRemoval { get; set; } = false;
 }

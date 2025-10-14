@@ -337,6 +337,24 @@ public partial class TusS3Store : ITusS3Store
     {
         IEnumerable<S3UploadInfo> uploadInfos = await _tusS3Api.GetAllUploadInfos(cancellationToken);
 
+        if (!_configuration.DisableUnattachedMultipartUploadsRemoval)
+            await AbortUnattachedMultipartUploadsAsync(uploadInfos, cancellationToken);
+
+        IEnumerable<S3UploadInfo> expiredIncompleteFiles =
+            uploadInfos.Where(info => info.Expires.HasPassed() && info.UploadOffset < info.UploadLength);
+
+        foreach (S3UploadInfo uploadInfo in expiredIncompleteFiles)
+        {
+            await DeleteFileAsync(uploadInfo.FileId, cancellationToken);
+
+            _logger.LogTrace("Deleted incomplete expired file with id '{FileId}'", uploadInfo.FileId);
+        }
+
+        return expiredIncompleteFiles.Count();
+    }
+
+    private async Task AbortUnattachedMultipartUploadsAsync(IEnumerable<S3UploadInfo> uploadInfos, CancellationToken cancellationToken)
+    {
         IListMultipartUploadsPaginator? paginator = _tusS3Api.ListMultipartUploads();
 
         if (paginator != null)
@@ -358,18 +376,6 @@ public partial class TusS3Store : ITusS3Store
                 }
             }
         }
-
-        IEnumerable<S3UploadInfo> expiredIncompleteFiles =
-            uploadInfos.Where(info => info.Expires.HasPassed() && info.UploadOffset < info.UploadLength);
-
-        foreach (S3UploadInfo uploadInfo in expiredIncompleteFiles)
-        {
-            await DeleteFileAsync(uploadInfo.FileId, cancellationToken);
-
-            _logger.LogTrace("Deleted incomplete expired file with id '{FileId}'", uploadInfo.FileId);
-        }
-
-        return expiredIncompleteFiles.Count();
     }
 
     /// <inheritdoc />
